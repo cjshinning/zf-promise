@@ -9,41 +9,8 @@
 const RESOLVED = 'RESOLVED';
 const REJECTED = 'REJECTED';
 const PENDING = 'PENDING';
-
-// resolvePromise 所有的promise都要兼容 bluebird q es6-promise
 const resolvePromise = (promise2, x, resolve, reject) => {
-  //  1.循环引用，自己等待自己完成 错误实现
-  if (promise2 === x) { //用一个类型错误，结束掉promise
-    return reject(new TypeError('TypeError: Chaining cycle detected for promise #<Promise>'));
-  }
-  // 后续的条件要严格判断 保证代码能和别的库一起使用
-  let called;
-  if ((typeof x === 'object' && x != null) || typeof x === 'function') {  //有可能是一个promise
-    // 要继续判断
-    try {
-      let then = x.then;
-      if (typeof then === 'function') { //只能认为是一个promise了
-        // 不要写成x.then 直接then.call就可以了，因为x.then可能会报错
-        then.call(x, y => { //根据promise的状态决定是成功还是失败
-          if (called) return;
-          called = true;
-          resolvePromise(promise2, y, resolve, reject); //递归解析过程
-        }, e => {
-          if (called) return;
-          called = true;
-          reject(e)
-        });
-      } else {  //{then:123}
-        resolve(x);
-      }
-    } catch (e) { //防止失败了再次进入成功
-      if (called) return;
-      called = true;
-      reject(e);  //取值出错
-    }
-  } else {
-    resolve(x);
-  }
+  console.log(promise2, x, resolve, reject);
 }
 class Promise {
   constructor(executor) {
@@ -80,8 +47,6 @@ class Promise {
   // 4.每次执行完promise.then方法后返回都是一个新的promise
 
   then(onFulfilled, onRejected) {
-    onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : v => v;
-    onRejected = typeof onRejected === 'function' ? onRejected : err => { throw err };
     let promise2 = new Promise((resolve, reject) => {
       if (this.status == RESOLVED) {
         setTimeout(() => {
@@ -126,17 +91,4 @@ class Promise {
   }
 }
 
-// promise的延迟对象
-Promise.defer = Promise.deferred = function () {
-  let dfd = {};
-  dfd.promise = new Promise((resolve, reject) => {
-    dfd.resolve = resolve;
-    dfd.reject = reject;
-  })
-
-  return dfd;
-}
-
-// npm install promises-aplus-tests -g
-// promises-aplus-tests promise.js
 module.exports = Promise;
